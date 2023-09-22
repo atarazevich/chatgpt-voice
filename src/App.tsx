@@ -67,9 +67,10 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition();
-
-  const initialMessages: Message[] = [
-    { type: 'response', text: 'Try speaking to the microphone.' },
+  const history = localStorage.getItem('messages');
+  const initialMessages: Message[] = history && JSON.parse(history) ||
+  [
+    { type: 'response', text: 'Hello! My name is Jenna, and I\'m a helpful robot here to help you capture your wonderful life stories. Although I\'m not a real person, think of me as your friendly digital ghostwriter. You\'re here because someone special wants to preserve your wisdom, stories, and memories. What an honour! Today, we\'ll start with our first session. No need to worry; this will be a relaxed and enjoyable experience. You can answer my questions using your voice or by typing—whatever feels most comfortable for you. Just speak freely and let the thoughts flow; I\'ll handle the rest professionally. We can spend as much time as you like, and when you\'re ready to wrap up for the day, simply let me know. I\'ll then send you the first chapter of your memoir based on what you\'ve shared. Shall we begin? So, what\'s a childhood memory that stands out for you?' },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
@@ -147,6 +148,7 @@ function App() {
 
   const resetConversation = () => {
     setState(State.IDLE);
+    localStorage.setItem('messages', '')
     setMessages(initialMessages);
     conversationRef.current = { currentMessageId: '' };
 
@@ -216,10 +218,14 @@ function App() {
       return;
     }
 
-    setMessages((oldMessages) => [
-      ...oldMessages,
-      { type: 'prompt', text: finalTranscript },
-    ]);
+    setMessages((oldMessages) => {
+      const messages = [
+        ...oldMessages,
+        { type: 'prompt', text: finalTranscript },
+      ];
+      localStorage.setItem('messages', JSON.stringify(messages));
+      return messages
+    });
 
     const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
@@ -234,10 +240,14 @@ function App() {
       .then((res) => res.json())
       .then((res: CreateChatGPTMessageResponse) => {
         conversationRef.current.currentMessageId = res.messageId;
-        setMessages((oldMessages) => [
-          ...oldMessages,
-          { type: 'response', text: res.answer },
-        ]);
+        setMessages((oldMessages) => {
+          const messages = [
+            ...oldMessages,
+            { type: 'response', text: res.answer },
+          ];
+          localStorage.setItem('messages', JSON.stringify(messages));
+          return messages
+        });
         speak(res.answer);
       })
       .catch((err: unknown) => {
@@ -281,14 +291,9 @@ function App() {
       <header className="flex flex-col items-center lg:flex-row lg:justify-between lg:mb-4">
         {/* w-64 so text will break after ChatGPT */}
         <h1 className="font-title text-3xl text-center w-64 lg:w-auto">
-          ChatGPT With Voice
+          Memoir Interviewer
           <div className="inline-block w-4 h-7 ml-2 align-middle bg-dark/40 animate-blink" />
         </h1>
-        <div className="mt-4 flex justify-center lg:px-2">
-          <a href="https://github.com/thanhsonng/chatgpt-voice" target="_blank">
-            <GitHub strokeWidth={1} />
-          </a>
-        </div>
       </header>
 
       <main className="flex-1 flex flex-col gap-y-4 overflow-y-auto lg:mr-80 lg:gap-y-8">
