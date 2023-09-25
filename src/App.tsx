@@ -70,7 +70,7 @@ function App() {
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
-    { type: 'response', text: 'Hello! My name is Jenna, and I\'m a helpful robot here to help you capture your wonderful life stories. Although I\'m not a real person, think of me as your friendly digital ghostwriter. You\'re here because someone special wants to preserve your wisdom, stories, and memories. What an honour! Today, we\'ll start with our first session. No need to worry; this will be a relaxed and enjoyable experience. You can answer my questions using your voice or by typing—whatever feels most comfortable for you. Just speak freely and let the thoughts flow; I\'ll handle the rest professionally. We can spend as much time as you like, and when you\'re ready to wrap up for the day, simply let me know. I\'ll then send you the first chapter of your memoir based on what you\'ve shared. Shall we begin? So, what\'s a childhood memory that stands out for you?' },
+    { type: 'response', text: 'Hello! I\'m Jenna, here to assist you in weaving your unique life tales. Whether you\'re brimming with ideas or seeking a guiding hand, our journey will be easy-going and enjoyable. Feel free to share your stories vocally, and take all the time you need; I\'ll skillfully shape the opening chapter of your memoir. Shall we dive in? Is there a specific story or memory on your mind, or would you like to begin with something from your childhood?' },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
@@ -219,13 +219,14 @@ function App() {
     }
 
     setMessages((oldMessages) => {
-      const messages = [
+      const newMessages = [
         ...oldMessages,
-        { type: 'prompt', text: finalTranscript },
+        { type: 'prompt', text: finalTranscript } as Message,
       ];
-      localStorage.setItem('messages', JSON.stringify(messages));
-      return messages
+      localStorage.setItem('messages', JSON.stringify(newMessages));
+      return newMessages;
     });
+
 
     const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
@@ -241,12 +242,12 @@ function App() {
       .then((res: CreateChatGPTMessageResponse) => {
         conversationRef.current.currentMessageId = res.messageId;
         setMessages((oldMessages) => {
-          const messages = [
+          const newMessages = [
             ...oldMessages,
-            { type: 'response', text: res.answer },
+            { type: 'prompt', text: finalTranscript } as Message,
           ];
-          localStorage.setItem('messages', JSON.stringify(messages));
-          return messages
+          localStorage.setItem('messages', JSON.stringify(newMessages));
+          return newMessages;
         });
         speak(res.answer);
       })

@@ -17,7 +17,7 @@ class VoiceManager {
 
   startListening() {
     window.speechSynthesis.cancel();
-    SpeechRecognition.startListening();
+    SpeechRecognition.startListening({ continuous: true });
   }
 
   stopListening() {
