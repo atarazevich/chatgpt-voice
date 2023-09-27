@@ -219,13 +219,14 @@ function App() {
     }
 
     setMessages((oldMessages) => {
-      const messages = [
+      const newMessages = [
         ...oldMessages,
-        { type: 'prompt', text: finalTranscript },
+        { type: 'prompt', text: finalTranscript } as Message,
       ];
-      localStorage.setItem('messages', JSON.stringify(messages));
-      return messages
+      localStorage.setItem('messages', JSON.stringify(newMessages));
+      return newMessages;
     });
+
 
     const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
@@ -241,12 +242,12 @@ function App() {
       .then((res: CreateChatGPTMessageResponse) => {
         conversationRef.current.currentMessageId = res.messageId;
         setMessages((oldMessages) => {
-          const messages = [
+          const newMessages = [
             ...oldMessages,
-            { type: 'response', text: res.answer },
+            { type: 'prompt', text: finalTranscript } as Message,
           ];
-          localStorage.setItem('messages', JSON.stringify(messages));
-          return messages
+          localStorage.setItem('messages', JSON.stringify(newMessages));
+          return newMessages;
         });
         speak(res.answer);
       })
