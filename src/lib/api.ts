@@ -7,7 +7,7 @@ class APIClient {
   sendMessage(host: string, payload: SendMessagePayload) {
     const abortController = new AbortController();
 
-    const response = fetch(`${host}/chatgpt/messages`, {
+    const response = fetch(`${host}/messages/get_completion`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
