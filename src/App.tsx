@@ -66,11 +66,11 @@ function App() {
     transcript,
     listening,
     finalTranscript,
-  } = useSpeechRecognition();
+  } = useSpeechRecognition({clearTranscriptOnListen:true});
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
-    { type: 'response', text: 'Hello! My name is Jenna, and I\'m a helpful robot here to help you capture your wonderful life stories. Although I\'m not a real person, think of me as your friendly digital ghostwriter. You\'re here because someone special wants to preserve your wisdom, stories, and memories. What an honour! Today, we\'ll start with our first session. No need to worry; this will be a relaxed and enjoyable experience. You can answer my questions using your voice or by typing—whatever feels most comfortable for you. Just speak freely and let the thoughts flow; I\'ll handle the rest professionally. We can spend as much time as you like, and when you\'re ready to wrap up for the day, simply let me know. I\'ll then send you the first chapter of your memoir based on what you\'ve shared. Shall we begin? So, what\'s a childhood memory that stands out for you?' },
+    { type: 'response', text: 'Hi, I\'m Jenna, ready to help you craft your personal stories. Whether you have lots of ideas or need some guidance, our process will be relaxed and fun. You\'re welcome to share your stories out loud and at your own pace; I\'ll help you start your memoir. Ready to begin? Do you have a specific story or memory in mind, or would you prefer starting with a childhood memory?' },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
