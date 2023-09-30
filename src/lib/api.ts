@@ -7,7 +7,7 @@ class APIClient {
   sendMessage(host: string, payload: SendMessagePayload) {
     const abortController = new AbortController();
 
-    const response = fetch(`${host}/api/v1/messages/get_completion`, {
+    const response = fetch(`${host}/messages/get_completion`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
