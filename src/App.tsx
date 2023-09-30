@@ -244,7 +244,7 @@ function App() {
         setMessages((oldMessages) => {
           const newMessages = [
             ...oldMessages,
-            { type: 'prompt', text: finalTranscript } as Message,
+            { type: 'response', text: res.answer } as Message,
           ];
           localStorage.setItem('messages', JSON.stringify(newMessages));
           return newMessages;
