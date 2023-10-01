@@ -40,11 +40,13 @@ import useVoices from './hooks/useVoices';
 interface CreateChatGPTMessageResponse {
   answer: string;
   messageId: string;
+  ttsUrl: string;
 }
 
 interface Message {
   type: 'prompt' | 'response';
   text: string;
+  ttsUrl?: string;
 }
 
 interface VoiceMappings {
@@ -139,6 +141,18 @@ function App() {
       Voice.stopListening();
     }
   };
+
+  const playAudio = useCallback(
+    (url: string) => {
+      return new Promise((resolve) => {
+        const audio = new Audio(url);
+        audio.onended = resolve;
+        audio.play();
+      });
+    },
+    [],
+);
+
 
   const speak = useCallback(
     (text: string) => {
@@ -240,9 +254,9 @@ function App() {
         conversationRef.current.currentMessageId = res.messageId;
         setMessages((oldMessages) => [
           ...oldMessages,
-          { type: 'response', text: res.answer },
+          { type: 'response', text: res.answer, ttsUrl: res.ttsUrl },
         ]);
-        speak(res.answer);
+        playAudio(res.ttsUrl);
       })
       .catch((err: unknown) => {
         console.warn(err);
@@ -279,6 +293,15 @@ function App() {
       </div>
     );
   }
+  const handleOnClick = (message: Message) => {
+    return (text: string) => {
+        if (message.ttsUrl) {
+            playAudio(message.ttsUrl)
+        } else {
+            speak(text);
+        }
+    };
+  };
 
   return (
     <div className="container mx-auto px-8 py-9 flex flex-col h-screen gap-y-4 lg:px-28 lg:py-12 lg:relative">
@@ -291,7 +314,7 @@ function App() {
       </header>
 
       <main className="flex-1 flex flex-col gap-y-4 overflow-y-auto lg:mr-80 lg:gap-y-8">
-        {messages.map(({ type, text }, index) => {
+        {messages.map(({ type, text, ttsUrl }, index) => {
           const getIsActive = () => {
             switch (state) {
               case State.IDLE: {
@@ -319,7 +342,7 @@ function App() {
               type={type}
               text={text}
               isActive={getIsActive()}
-              onClick={speak}
+              onClick={handleOnClick({ type, text, ttsUrl })}
             />
           );
         })}

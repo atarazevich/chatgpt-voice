@@ -5,7 +5,7 @@ interface MessageProps {
   type: 'prompt' | 'response';
   text: string;
   isActive: boolean;
-  onClick?(text: string): void;
+  onClick?: (text: string) => void;
 }
 
 export default function Message({
