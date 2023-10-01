@@ -67,10 +67,11 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
+  const first_message = "Hello and good day, I\'m Jenna, and it\'s a genuine privilege to have this time to converse with you today. Our discussion is an opportunity to delve into some fascinating and insightful topics. Your wisdom and experiences are treasures, and I\'m eager to hear your thoughts. Please rest assured, this is a relaxed conversation and we can move at your own pace. If you\'d like to change the subject or take a moment, just let me know. Your comfort is my priority. Before we start, is there anything you\'d like to share or ask? I\'m all ears. 🌼"
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
-    { type: 'response', text: 'Hi, I\'m Jenna, ready to help you craft your personal stories. Whether you have lots of ideas or need some guidance, our process will be relaxed and fun. You\'re welcome to share your stories out loud and at your own pace; I\'ll help you start your memoir. Ready to begin? Do you have a specific story or memory in mind, or would you prefer starting with a childhood memory?' },
+    { type: 'response', text: first_message },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
