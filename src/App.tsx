@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { debounce } from 'lodash';
 import { useSpeechRecognition } from 'react-speech-recognition';
 import {
   GitHub,
@@ -302,7 +303,7 @@ Ready? Hit the 🎙️ and start sharing!
       .finally(() => {
         setState(State.IDLE);
       });
-  }, [state, finalTranscript]);
+  }, [state]);
 
   if (!browserSupportsSpeechRecognition) {
     return (

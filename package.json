@@ -13,6 +13,7 @@
     "@radix-ui/react-select": "^1.1.2",
     "@radix-ui/react-slider": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.2",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-device-detect": "^2.2.2",
     "react-dom": "^18.2.0",
@@ -24,6 +25,7 @@
     "web-speech-cognitive-services": "^7.1.4-master.9e026d9"
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.199",
     "@types/react": "^18.0.26",
     "@types/react-dom": "^18.0.9",
     "@types/react-speech-recognition": "^3.9.0",
