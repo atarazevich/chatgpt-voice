@@ -247,11 +247,12 @@ Ready? Hit the 🎙️ and start sharing!
     });
   }, [defaultVoice]);
 
+  const isSendingMessageRef = useRef(false);
   useEffect(() => {
-    if (state !== State.PROCESSING || !finalTranscript) {
+    if (isSendingMessageRef.current || state !== State.PROCESSING || !finalTranscript) {
       return;
     }
-
+    isSendingMessageRef.current = true;
     setMessages((oldMessages) => [
       ...oldMessages,
       { type: 'prompt', text: finalTranscript },
@@ -301,6 +302,7 @@ Ready? Hit the 🎙️ and start sharing!
         speak(response);
       })
       .finally(() => {
+        isSendingMessageRef.current = false;
         setState(State.IDLE);
       });
   }, [state]);
