@@ -69,7 +69,27 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
-  const first_message = "Hi, I am Famy, your personal biographer and a friend! We are here because someone special wants to preserve your wisdom, stories, and memories. What an honour! Speak to me as if I am a real person. I will listen to your stories and ask questions. When you feel it\'s enough, just ask me to write down the story for you. Do you have something in mind to start with or would you like me to suggest you some topics?"
+  const first_message = `
+  👋 Hello and welcome to Famy early version! I'm delighted you've joined. Currently, I am designed to help you preserve your stories, thoughts, and family memories in written form through voice-to-text. 🎙️
+
+**Here's How It Works:**
+
+To begin recording, click on the microphone button.
+Speak your story, thought, or memory into the app.
+Your speech will be transcribed to text automatically. Please don't worry about spelling, grammar, or any inaccuracies in the transcription; it's not perfect yet, but it won't affect the quality of my understanding.
+The text is saved, and you can revisit or download it anytime.
+
+**Before We Begin:**
+
+I'm eager to understand more about you. Could you kindly share:
+
+For whom are you compiling these memoirs?
+What has inspired you to start this project?
+Do you have any specific goals or milestones for your memoir?
+Please share whatever details you're comfortable with. This will help us make Famy more suitable for you. 📝
+
+🎙️ When you are ready to get started, click on the microphone button!
+  `;
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
