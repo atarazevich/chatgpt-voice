@@ -70,25 +70,23 @@ function App() {
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
   const first_message = `
-  👋 Hello and welcome to Famy early version! I'm delighted you've joined. Currently, I am designed to help you preserve your stories, thoughts, and family memories in written form through voice-to-text. 🎙️
+👋 Hello! Welcome to Famy's early version. Excited to help you capture memories!
 
-**Here's How It Works:**
+**How It Works**:
+- 🎙️ Click the microphone to start recording.
+- 📝 Speak your story, and we'll convert it to text.
+- 🚫 Don't stress about spelling or grammar. 
+- 💾 Your stories are saved to revisit or download.
 
-To begin recording, click on the microphone button.
-Speak your story, thought, or memory into the app.
-Your speech will be transcribed to text automatically. Please don't worry about spelling, grammar, or any inaccuracies in the transcription; it's not perfect yet, but it won't affect the quality of my understanding.
-The text is saved, and you can revisit or download it anytime.
+**Quick Questions**:
+- Who are these memoirs for?
+- What inspired this project?
+- Any specific goals for your memoir?
 
-**Before We Begin:**
+📘 Share any details you're comfy with. It helps us tailor Famy for you.
 
-I'm eager to understand more about you. Could you kindly share:
+Ready? Hit the 🎙️ and start sharing!
 
-For whom are you compiling these memoirs?
-What has inspired you to start this project?
-Do you have any specific goals or milestones for your memoir?
-Please share whatever details you're comfortable with. This will help us make Famy more suitable for you. 📝
-
-🎙️ When you are ready to get started, click on the microphone button!
   `;
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
@@ -304,7 +302,7 @@ Please share whatever details you're comfortable with. This will help us make Fa
       .finally(() => {
         setState(State.IDLE);
       });
-  }, [state, finalTranscript, settings, speak]);
+  }, [state, finalTranscript]);
 
   if (!browserSupportsSpeechRecognition) {
     return (

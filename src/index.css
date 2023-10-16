@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Major+Mono+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,13 +6,23 @@
 
 @layer base {
   :root {
-    @apply font-mono;
+    --font-sans: 'Inter', sans-serif;
+    @apply font-sans;
     @apply bg-light;
     @apply text-dark;
   }
 
   body {
-    @apply text-sm;
+    @apply text-xs leading-relaxed;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-normal mt-4 mb-2;
+  }
+
+  p, ul, ol {
+    @apply mb-4;
   }
 
   a {
@@ -22,6 +32,14 @@
   }
 
   code {
-    @apply text-accent2;
+    @apply text-accent2 bg-gray-200 px-2 py-1 rounded;
+  }
+
+  .font-medium, .text-2xl {
+    font-weight: normal !important;
+  }
+  
+  .markdown-content {
+    @apply text-xs leading-5;
   }
 }

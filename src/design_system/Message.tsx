@@ -1,5 +1,6 @@
 import { KeyboardEventHandler } from 'react';
 import { DollarSign, Terminal } from 'react-feather';
+import ReactMarkdown from 'react-markdown';
 
 interface MessageProps {
   type: 'prompt' | 'response';
@@ -47,7 +48,7 @@ export default function Message({
           </span>
         )}
       </div>
-      <div className="font-medium text-2xl">{text}</div>
+      <div className="font-medium text-2xl markdown-content"><ReactMarkdown>{text}</ReactMarkdown></div>
     </div>
   );
 }
