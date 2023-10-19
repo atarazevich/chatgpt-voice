@@ -1,7 +1,7 @@
 {
     "routes": [
       {
-        "src": "/.*",
+        "src": "^/((?!_next).+)$",
         "dest": "/index.html"
       }
     ]
