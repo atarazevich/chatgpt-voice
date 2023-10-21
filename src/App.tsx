@@ -40,20 +40,23 @@ import useVoices from './hooks/useVoices';
 
 import { H } from 'highlight.run';
 
-H.init('xdnrw74e', {
-	serviceName: "frontend-app",
-	tracingOrigins: ['https://backend-p-memoir.onrender.com'],
-	networkRecording: {
-		enabled: true,
-		recordHeadersAndBody: true,
-		urlBlocklist: [
-			// insert full or partial urls that you don't want to record here
-			// Out of the box, Highlight will not record these URLs (they can be safely removed):
-			"https://www.googleapis.com/identitytoolkit",
-			"https://securetoken.googleapis.com",
-		],
-	},
-});
+if(import.meta.env.ENV === "prod") {
+  console.log('This is a production build');
+  H.init('xdnrw74e', {
+    serviceName: "frontend-app",
+    tracingOrigins: ['https://backend-p-memoir.onrender.com'],
+    networkRecording: {
+      enabled: true,
+      recordHeadersAndBody: true,
+      urlBlocklist: [
+        // insert full or partial urls that you don't want to record here
+        // Out of the box, Highlight will not record these URLs (they can be safely removed):
+        "https://www.googleapis.com/identitytoolkit",
+        "https://securetoken.googleapis.com",
+      ],
+    },
+  });
+};
 
 interface CreateChatGPTMessageResponse {
   answer: string;
@@ -87,8 +90,8 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
-  const [firstMessageFromURL, setFirstMessageFromURL] = useState<string | null>(null);
-  const [parentIdFromURL, setParentIdFromURL] = useState<string | null>(null);
+  const [firstMessageFromURL, setFirstMessageFromURL] = useState<string>('');
+  const conversationRef = useRef({ currentMessageId: '' });
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const firstMessageParam = params.get('first_message');
@@ -97,45 +100,53 @@ function App() {
     if (firstMessageParam) {
       setFirstMessageFromURL(firstMessageParam);
     }
+    else {
+      const first_message = `
+        👋 Hello! Welcome to Famy's early version. Excited to help you capture memories!
+
+        **How It Works**:
+        - 🎙️ Click the microphone to start recording.
+        - 📝 Speak your story, and we'll convert it to text.
+        - 🚫 Don't stress about spelling or grammar. 
+        - 💾 Your stories are saved to revisit or download.
+
+        **Quick Questions**:
+        - Who are these memoirs for?
+        - What inspired this project?
+        - Any specific goals for your memoir?
+
+        📘 Share any details you're comfy with. It helps us tailor Famy for you.
+
+        Ready? Hit the 🎙️ and start sharing!
+
+          `;
+      setFirstMessageFromURL(first_message);
+    }
   
     if (parentIdParam) {
-      setParentIdFromURL(parentIdParam);
       conversationRef.current.currentMessageId = parentIdParam;
     }
     // Further logic for initiating chat can go here
+    
   }, []);
-  const first_message = `
-👋 Hello! Welcome to Famy's early version. Excited to help you capture memories!
-
-**How It Works**:
-- 🎙️ Click the microphone to start recording.
-- 📝 Speak your story, and we'll convert it to text.
-- 🚫 Don't stress about spelling or grammar. 
-- 💾 Your stories are saved to revisit or download.
-
-**Quick Questions**:
-- Who are these memoirs for?
-- What inspired this project?
-- Any specific goals for your memoir?
-
-📘 Share any details you're comfy with. It helps us tailor Famy for you.
-
-Ready? Hit the 🎙️ and start sharing!
-
-  `;
-  const history = localStorage.getItem('messages');
-  const initialMessages: Message[] = history && JSON.parse(history) ||
+  
+  const initialMessages: Message[] = 
   [
-    { type: 'response', text: firstMessageFromURL || first_message },
+    { type: 'response', text: firstMessageFromURL },
   ];
+
+  const [messagesHistory, setMessagesHistory] = useState<Message[]>(JSON.parse(localStorage.getItem('messages') ?? '[]'));
+
+  const [messages, setMessages] = useState<Message[]>(messagesHistory);
+
+  const [state, setState] = useState(State.IDLE);
+
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
     port: 8000,
     voiceURI: '',
     voiceSpeed: 1,
   });
-  const [state, setState] = useState(State.IDLE);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [settings, setSettings] = useState({
     host: (savedData?.host as string) ?? defaultSettingsRef.current.host,
     port: (savedData?.port as number) ?? defaultSettingsRef.current.port,
@@ -151,7 +162,6 @@ Ready? Hit the 🎙️ and start sharing!
   );
   const { voices, defaultVoice } = useVoices();
   const abortRef = useRef<AbortController | null>(null);
-  const conversationRef = useRef({ currentMessageId: '' });
   const bottomDivRef = useRef<HTMLDivElement>(null);
 
   const availableVoices = useMemo(() => {
@@ -218,6 +228,7 @@ Ready? Hit the 🎙️ and start sharing!
     setState(State.IDLE);
     localStorage.setItem('messages', '')
     setMessages(initialMessages);
+    localStorage.setItem('messages', JSON.stringify(messages));
     conversationRef.current = { currentMessageId: '' };
 
     Voice.idle();
@@ -284,6 +295,12 @@ Ready? Hit the 🎙️ and start sharing!
   }, [defaultVoice]);
 
   const isSendingMessageRef = useRef(false);
+
+  useEffect(() => {
+    localStorage.setItem('messages', JSON.stringify(messages));
+    console.log('messages update', messages);
+  }, [messages]);
+
   useEffect(() => {
     if (isSendingMessageRef.current || state !== State.PROCESSING || !finalTranscript) {
       return;
@@ -293,7 +310,6 @@ Ready? Hit the 🎙️ and start sharing!
       ...oldMessages,
       { type: 'prompt', text: finalTranscript },
     ]);
-
 
     const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
