@@ -38,6 +38,23 @@ import Storage from './lib/storage';
 import Voice from './lib/voice';
 import useVoices from './hooks/useVoices';
 
+import { H } from 'highlight.run';
+
+H.init('xdnrw74e', {
+	serviceName: "frontend-app",
+	tracingOrigins: true,
+	networkRecording: {
+		enabled: true,
+		recordHeadersAndBody: true,
+		urlBlocklist: [
+			// insert full or partial urls that you don't want to record here
+			// Out of the box, Highlight will not record these URLs (they can be safely removed):
+			"https://www.googleapis.com/identitytoolkit",
+			"https://securetoken.googleapis.com",
+		],
+	},
+});
+
 interface CreateChatGPTMessageResponse {
   answer: string;
   messageId: string;
@@ -70,6 +87,23 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
+  const [firstMessageFromURL, setFirstMessageFromURL] = useState<string | null>(null);
+  const [parentIdFromURL, setParentIdFromURL] = useState<string | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const firstMessageParam = params.get('first_message');
+    const parentIdParam = params.get('message_parent_id');
+
+    if (firstMessageParam) {
+      setFirstMessageFromURL(firstMessageParam);
+    }
+  
+    if (parentIdParam) {
+      setParentIdFromURL(parentIdParam);
+      conversationRef.current.currentMessageId = parentIdParam;
+    }
+    // Further logic for initiating chat can go here
+  }, []);
   const first_message = `
 👋 Hello! Welcome to Famy's early version. Excited to help you capture memories!
 
@@ -92,7 +126,7 @@ Ready? Hit the 🎙️ and start sharing!
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
-    { type: 'response', text: first_message },
+    { type: 'response', text: firstMessageFromURL || first_message },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
@@ -201,6 +235,8 @@ Ready? Hit the 🎙️ and start sharing!
       [setting]: defaultSettingsRef.current[setting],
     });
   };
+
+  
 
   useEffect(() => {
     setState((oldState) => {

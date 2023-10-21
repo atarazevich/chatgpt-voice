@@ -1,9 +1,0 @@
-{
-    "routes": [
-      {
-        "src": "^/((?!_next).+)$",
-        "dest": "/index.html"
-      }
-    ]
-  }
-  
