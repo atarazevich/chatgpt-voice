@@ -42,7 +42,7 @@ import { H } from 'highlight.run';
 
 H.init('xdnrw74e', {
 	serviceName: "frontend-app",
-	tracingOrigins: true,
+	tracingOrigins: ['https://backend-p-memoir.onrender.com'],
 	networkRecording: {
 		enabled: true,
 		recordHeadersAndBody: true,
