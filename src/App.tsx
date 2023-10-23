@@ -40,21 +40,21 @@ import useVoices from './hooks/useVoices';
 
 import { H } from 'highlight.run';
 
-H.init('xdnrw74e', {
-	serviceName: "frontend-app",
-	tracingOrigins: ['https://backend-p-memoir.onrender.com'],
-	networkRecording: {
-		enabled: true,
-		recordHeadersAndBody: true,
-		urlBlocklist: [
-			// insert full or partial urls that you don't want to record here
-			// Out of the box, Highlight will not record these URLs (they can be safely removed):
-			"https://www.googleapis.com/identitytoolkit",
-			"https://securetoken.googleapis.com",
-		],
-	},
-});
-
+  H.init('xdnrw74e', {
+         serviceName: "frontend-app",
+         tracingOrigins: ['https://backend-p-memoir.onrender.com'],
+         networkRecording: {
+                 enabled: true,
+                 recordHeadersAndBody: true,
+                 urlBlocklist: [
+                         // insert full or partial urls that you don't want to record here
+                         // Out of the box, Highlight will not record these URLs (they can be safely removed):
+                         "https://www.googleapis.com/identitytoolkit",
+                         "https://securetoken.googleapis.com",
+                 ],
+         },
+  });
+  
 interface CreateChatGPTMessageResponse {
   answer: string;
   messageId: string;
@@ -87,23 +87,16 @@ function App() {
     listening,
     finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
-  const [firstMessageFromURL, setFirstMessageFromURL] = useState<string | null>(null);
-  const [parentIdFromURL, setParentIdFromURL] = useState<string | null>(null);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const firstMessageParam = params.get('first_message');
-    const parentIdParam = params.get('message_parent_id');
 
-    if (firstMessageParam) {
-      setFirstMessageFromURL(firstMessageParam);
-    }
+  const conversationRef = useRef({ currentMessageId: '' });
+  const params = new URLSearchParams(window.location.search);
+  const firstMessageParam = params.get('first_message');
+  const parentIdParam = params.get('message_parent_id');
+
+  if (parentIdParam) {
+    conversationRef.current.currentMessageId = parentIdParam;
+  }
   
-    if (parentIdParam) {
-      setParentIdFromURL(parentIdParam);
-      conversationRef.current.currentMessageId = parentIdParam;
-    }
-    // Further logic for initiating chat can go here
-  }, []);
   const first_message = `
 👋 Hello! Welcome to Famy's early version. Excited to help you capture memories!
 
@@ -126,7 +119,7 @@ Ready? Hit the 🎙️ and start sharing!
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
-    { type: 'response', text: firstMessageFromURL || first_message },
+    { type: 'response', text: firstMessageParam || first_message },
   ];
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
@@ -134,8 +127,14 @@ Ready? Hit the 🎙️ and start sharing!
     voiceURI: '',
     voiceSpeed: 1,
   });
+
+  
   const [state, setState] = useState(State.IDLE);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+  useEffect(() => {
+    localStorage.setItem('messages', JSON.stringify(messages));
+  }, [messages]);
+
   const [settings, setSettings] = useState({
     host: (savedData?.host as string) ?? defaultSettingsRef.current.host,
     port: (savedData?.port as number) ?? defaultSettingsRef.current.port,
@@ -151,7 +150,6 @@ Ready? Hit the 🎙️ and start sharing!
   );
   const { voices, defaultVoice } = useVoices();
   const abortRef = useRef<AbortController | null>(null);
-  const conversationRef = useRef({ currentMessageId: '' });
   const bottomDivRef = useRef<HTMLDivElement>(null);
 
   const availableVoices = useMemo(() => {
