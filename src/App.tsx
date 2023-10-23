@@ -37,9 +37,10 @@ import Config from './lib/config';
 import Storage from './lib/storage';
 import Voice from './lib/voice';
 import useVoices from './hooks/useVoices';
-
 import { H } from 'highlight.run';
 
+if(import.meta.env.ENV != "dev") {
+  
   H.init('xdnrw74e', {
          serviceName: "frontend-app",
          tracingOrigins: ['https://backend-p-memoir.onrender.com'],
@@ -54,7 +55,7 @@ import { H } from 'highlight.run';
                  ],
          },
   });
-  
+}
 interface CreateChatGPTMessageResponse {
   answer: string;
   messageId: string;
