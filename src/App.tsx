@@ -99,25 +99,27 @@ function App() {
   }
   
   const first_message = `
-  Hey there, and welcome to Famy's early-access experience! We're thrilled to help you capture your family's stories, wisdom, and cherished memories—straight from your voice to written words. 📜✨
+  # Welcome to Famy's Early-Access Journey! 🎉
+
+  We're thrilled to help you capture your family's stories, wisdom, and cherished memories—straight from your voice to written words. 📜✨
   
   ## How It Works
   
-  1. **Press the Mic Button**: Tap that microphone icon when you're all set.
-  2. **Talk It Out**: Unveil a memory, share a thought, or give us a snapshot of your life. No frills—just be authentically you!
-  3. **Magic Happens**: Your spoken anecdotes get transformed into text. Don't stress about the nitty-gritty like spelling or grammar; that's on us.
-  4. **We come back to you with a written story**: Your recorded narrative will be crafted into a written story. Note: This version of Famy application focuses solely on the recording aspect!
+  1. **Press the Mic Button**: click the black microphone button when you are ready to share. To send the message to the bot, click same button again - it will be teal color then.
+  2. **Talk It Out**: Unveil a memory, share a thought, or give us a snapshot of your life. Just be authentically you!
+  3. **Magic Happens**: Your spoken tales get transformed into text. Don't stress about transcription errors, spelling or grammar; that's on us.
+  4. **We come back to you with a written story.** This version of Famy application focuses solely on the recording aspect.
   
   ## Before We Jump In
   
-  - **Time**: Buckle up for a quick 10-minute session (we might extend it if we stumble upon storytelling gold!).
+  - **Time**: Buckle up for a quick 10-minute session (you can still extend it if you feel you're onto some storytelling gold!).
   - **Focus**: Our aim is to zero in on ONE defining tale that captures a facet of your unique identity.
   - **Storycraft**: Brace yourself for a few probing questions designed to enrich your narrative and reveal its heart.
   - **Quality**: Even though I'm still a newbie, we're aiming for nothing less than soul-stirring, unforgettable stories.
   
   ## 🎙️ Ready to Begin?
   
-  Feelin' pumped? Go ahead, tap that microphone button and let's etch your story into the annals of family history!
+  Go ahead, tap that microphone button and let's dive in into fabolous stories you didn't even know you had!
 
   `;
   const history = localStorage.getItem('messages');
