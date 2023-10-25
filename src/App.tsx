@@ -355,8 +355,6 @@ function App() {
     return (text: string) => {
         if (message.ttsUrl) {
             playAudio(message.ttsUrl)
-        } else {
-            speak(text);
         }
     };
   };
