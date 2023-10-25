@@ -99,8 +99,6 @@ function App() {
   }
   
   const first_message = `
-  # Welcome to Famy's Early-Access Journey! 🎉
-
   Hey there, and welcome to Famy's early-access experience! We're thrilled to help you capture your family's stories, wisdom, and cherished memories—straight from your voice to written words. 📜✨
   
   ## How It Works
@@ -223,7 +221,6 @@ function App() {
     localStorage.setItem('messages', '')
     setMessages(initialMessages);
     conversationRef.current = { currentMessageId: '' };
-
     Voice.idle();
     abortRef.current?.abort();
   };
@@ -460,12 +457,6 @@ function App() {
               </Tooltip.Root>
             </Tooltip.Provider>
 
-            <Button
-              aria-label="Settings"
-              onClick={() => setIsModalVisible(true)}
-            >
-              <Settings strokeWidth={1} />
-            </Button>
           </div>
 
           <button
@@ -504,9 +495,8 @@ function App() {
             ) : null}
           </button>
 
-          <Button aria-label="New conversation" onClick={resetConversation}>
-            <FilePlus strokeWidth={1} />
-          </Button>
+
+
         </div>
       </div>
 
