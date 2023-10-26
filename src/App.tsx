@@ -220,14 +220,13 @@ function App() {
     fetchToken();
   }, []);
 
-  const [finalTranscript, setFinalTranscript] = useState<string | null>(null);
+  const [finalTranscript, setFinalTranscript] = useState<string>("");
   const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
       : Config.API_HOST;
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [recorder, setRecorder] = useState<any>(null); // Consider using a more specific type if available
-  const [tmsg, setTmsg] = useState<string>("");
   const run = () => {
     console.log('Run function invoked.');
     console.log(`Current isRecording state: ${isRecording}`);
@@ -254,7 +253,7 @@ function App() {
     console.log(`Updated isRecording state to: true`);
   };
   
-
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   const stopRecording = () => {
       if (socket) {
           console.log('Terminating WebSocket session and closing socket.');
@@ -288,7 +287,7 @@ function App() {
             msg += ` ${texts[key]}`;
           }
         }
-        setTmsg(msg);
+        setFinalTranscript(msg);
       };
   
       socket.onerror = (event: Event) => {
@@ -298,7 +297,7 @@ function App() {
   
       socket.onclose = (event: CloseEvent) => {
         console.log('WebSocket closed:', event);
-        setSocket(null);
+   //     setSocket(null);
         setIsRecording(false);
       };
   
@@ -314,7 +313,7 @@ function App() {
               type: "audio",
               mimeType: "audio/wav",  // Changed to WAV to match the requirements
               recorderType: StereoAudioRecorder,
-              timeSlice: 250,  // Stays the same, 250 ms is within the 100-2000 ms range
+              timeSlice: 500,  // Stays the same, 250 ms is within the 100-2000 ms range
               desiredSampRate: 16000,  // 16,000 to match with the WebSocket
               numberOfAudioChannels: 1,  // Single channel as required
               bufferSize: 16384,  // Unchanged
@@ -392,7 +391,6 @@ function App() {
   
 
   useEffect(() => {
-    setFinalTranscript(tmsg)
     setState((oldState) => {
       if (isRecording) {
         return State.LISTENING;
@@ -405,7 +403,8 @@ function App() {
       }
       return State.IDLE;
     });
-  }, [isRecording, tmsg]);
+    bottomDivRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [isRecording, finalTranscript]);
 
   // Scroll to bottom when user is speaking a prompt
   useEffect(() => {
@@ -444,6 +443,7 @@ function App() {
       return;
     }
     console.log('ADDING MESSAGE with', isSendingMessageRef.current, state, finalTranscript);
+  
     isSendingMessageRef.current = true;
     setMessages((oldMessages) => [
       ...oldMessages,
@@ -555,7 +555,7 @@ function App() {
           );
         })}
         {state === State.LISTENING && (
-          <Message type="prompt" text={tmsg} isActive />
+          <Message type="prompt" text={finalTranscript} isActive />
         )}
         <div ref={bottomDivRef} />
       </main>
