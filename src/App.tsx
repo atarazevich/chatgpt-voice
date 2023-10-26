@@ -297,7 +297,7 @@ function App() {
   
       socket.onclose = (event: CloseEvent) => {
         console.log('WebSocket closed:', event);
-   //     setSocket(null);
+        setSocket(null);
         setIsRecording(false);
       };
   
