@@ -138,6 +138,7 @@ function App() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   useEffect(() => {
     localStorage.setItem('messages', JSON.stringify(messages));
+    console.log('MESSAGES UPDATED:', messages);
   }, [messages]);
 
   const [settings, setSettings] = useState({
@@ -197,6 +198,28 @@ function App() {
       Voice.stopListening();
     }
   };
+
+  const [token, setToken] = useState(null);
+  const fetchToken = async () => {
+    console.log('Fetching token...');
+    try {
+      const response = await fetch(`${host}get_token`);
+      const data = await response.json();
+      if (data.error) {
+        console.error(`Error fetching token: ${data.error}`);
+        alert(data.error);
+        return;
+      }
+      console.log(`Received token: ${data.token}`);
+      setToken(data.token);
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
+  };
+  useEffect(() => {
+    fetchToken();
+  }, []);
+
   const [finalTranscript, setFinalTranscript] = useState<string | null>(null);
   const host = Config.IS_LOCAL_SETUP_REQUIRED
       ? `${settings.host}:${settings.port}`
@@ -218,29 +241,19 @@ function App() {
     }
   };
 
-  const startRecording = async () => {
-      console.log('Fetching token...');
-      try {
-          const response = await fetch(`${host}get_token`);
-          const data = await response.json();
-
-          if (data.error) {
-              console.error(`Error fetching token: ${data.error}`);
-              alert(data.error);
-              return;
-          }
-
-          console.log(`Received token: ${data.token}`);
-          const newSocket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${data.token}`);
-          console.log('Creating new WebSocket instance.');
-          setSocket(newSocket);
-
-          setIsRecording(true);
-          console.log(`Updated isRecording state to: true`);
-      } catch (error) {
-          console.error('An error occurred:', error);
-      }
+  const startRecording = () => {
+    if (!token) {
+      console.error("No token available.");
+      return;
+    }
+  
+    console.log(`Using token: ${token}`);
+    const newSocket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
+    console.log('Creating new WebSocket instance.');
+    setSocket(newSocket);
+    console.log(`Updated isRecording state to: true`);
   };
+  
 
   const stopRecording = () => {
       if (socket) {
@@ -254,12 +267,10 @@ function App() {
           recorder.pauseRecording();
           setRecorder(null);
       }
-      setFinalTranscript(tmsg);
       setIsRecording(false);
       console.log(`Updated isRecording state to: false`);
   };
 
-  
   useEffect(() => {
     console.log('useEffect triggered by socket state change.');
     if (socket) {
@@ -267,7 +278,6 @@ function App() {
       const texts: { [key: string]: string } = {};
   
       socket.onmessage = (message: MessageEvent) => {
-        console.log('Received WebSocket message.');
         let msg = "";
         const res = JSON.parse(message.data);
         texts[res.audio_start] = res.text;
@@ -279,7 +289,6 @@ function App() {
           }
         }
         setTmsg(msg);
-        console.log(`Updated tmsg state to: ${msg}`);
       };
   
       socket.onerror = (event: Event) => {
@@ -290,7 +299,6 @@ function App() {
       socket.onclose = (event: CloseEvent) => {
         console.log('WebSocket closed:', event);
         setSocket(null);
-        setFinalTranscript(tmsg);
         setIsRecording(false);
       };
   
@@ -304,21 +312,17 @@ function App() {
             
             const newRecorder = new RecordRTC(stream, {
               type: "audio",
-              mimeType: "audio/webm;codecs=pcm", // endpoint requires 16bit PCM audio
+              mimeType: "audio/wav",  // Changed to WAV to match the requirements
               recorderType: StereoAudioRecorder,
-              timeSlice: 250, // set 250 ms intervals of data that sends to AAI
-              desiredSampRate: 16000,
-              numberOfAudioChannels: 1, // real-time requires only one channel
-              bufferSize: 16384,
-              audioBitsPerSecond: 128000,
+              timeSlice: 250,  // Stays the same, 250 ms is within the 100-2000 ms range
+              desiredSampRate: 16000,  // 16,000 to match with the WebSocket
+              numberOfAudioChannels: 1,  // Single channel as required
+              bufferSize: 16384,  // Unchanged
+              audioBitsPerSecond: 128000,  // Unchanged
               ondataavailable: (blob: Blob) => {
-                console.log('Data available. Reading blob.');
-                
                 const reader = new FileReader();
                 reader.onload = () => {
                   if (reader.result) {
-                    console.log('Blob read successfully. Sending audio data.');
-                    
                     const base64data = reader.result as string;
                     socket?.send(JSON.stringify({ audio_data: base64data.split("base64,")[1] }));
                   }
@@ -330,7 +334,6 @@ function App() {
       
             newRecorder.startRecording();
             setIsRecording(true);
-            setFinalTranscript("");
             console.log('Recording started.');
             
             setRecorder(newRecorder); // Using setRecorder to update the recorder state
@@ -389,12 +392,13 @@ function App() {
   
 
   useEffect(() => {
+    setFinalTranscript(tmsg)
     setState((oldState) => {
       if (isRecording) {
         return State.LISTENING;
       }
       if (
-        (oldState === State.LISTENING && transcript) || // At this point finalTranscript may not have a value yet
+        (oldState === State.LISTENING && finalTranscript) || // At this point finalTranscript may not have a value yet
         oldState === State.PROCESSING // Avoid setting state to IDLE when transcript is set to '' while processing
       ) {
         return State.PROCESSING;
@@ -436,14 +440,15 @@ function App() {
   const isSendingMessageRef = useRef(false);
   useEffect(() => {
     if (isSendingMessageRef.current || state !== State.PROCESSING || !finalTranscript) {
+      console.log('DROPPED ADDING MESSAGE with', isSendingMessageRef.current, state, finalTranscript);
       return;
     }
+    console.log('ADDING MESSAGE with', isSendingMessageRef.current, state, finalTranscript);
     isSendingMessageRef.current = true;
     setMessages((oldMessages) => [
       ...oldMessages,
       { type: 'prompt', text: finalTranscript },
     ]);
-
 
     
     const { response, abortController } = API.sendMessage(host, {
