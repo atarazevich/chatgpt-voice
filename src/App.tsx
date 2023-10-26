@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { debounce } from 'lodash';
+import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
 import { useSpeechRecognition } from 'react-speech-recognition';
 import {
   GitHub,
@@ -39,8 +39,8 @@ import Voice from './lib/voice';
 import useVoices from './hooks/useVoices';
 import { H } from 'highlight.run';
 
-if(import.meta.env.ENV != "dev") {
-  
+if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
+  console.log("Environment:", import.meta.env.ENV);
   H.init('xdnrw74e', {
          serviceName: "frontend-app",
          tracingOrigins: ['https://backend-p-memoir.onrender.com'],
@@ -86,7 +86,6 @@ function App() {
     isMicrophoneAvailable,
     transcript,
     listening,
-    finalTranscript,
   } = useSpeechRecognition({clearTranscriptOnListen:true});
 
   const conversationRef = useRef({ currentMessageId: '' });
@@ -198,6 +197,154 @@ function App() {
       Voice.stopListening();
     }
   };
+  const [finalTranscript, setFinalTranscript] = useState<string | null>(null);
+  const host = Config.IS_LOCAL_SETUP_REQUIRED
+      ? `${settings.host}:${settings.port}`
+      : Config.API_HOST;
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [recorder, setRecorder] = useState<any>(null); // Consider using a more specific type if available
+  const [tmsg, setTmsg] = useState<string>("");
+  const run = () => {
+    console.log('Run function invoked.');
+    console.log(`Current isRecording state: ${isRecording}`);
+
+    if (isRecording) {
+        console.log('Stopping recording...');
+        stopRecording();
+    } else {
+        console.log('Starting recording...');
+        startRecording();
+    }
+  };
+
+  const startRecording = async () => {
+      console.log('Fetching token...');
+      try {
+          const response = await fetch(`${host}get_token`);
+          const data = await response.json();
+
+          if (data.error) {
+              console.error(`Error fetching token: ${data.error}`);
+              alert(data.error);
+              return;
+          }
+
+          console.log(`Received token: ${data.token}`);
+          const newSocket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${data.token}`);
+          console.log('Creating new WebSocket instance.');
+          setSocket(newSocket);
+
+          setIsRecording(true);
+          console.log(`Updated isRecording state to: true`);
+      } catch (error) {
+          console.error('An error occurred:', error);
+      }
+  };
+
+  const stopRecording = () => {
+      if (socket) {
+          console.log('Terminating WebSocket session and closing socket.');
+          socket.send(JSON.stringify({ terminate_session: true }));
+          socket.close();
+          setSocket(null);
+      }
+      if (recorder) {
+          console.log('Pausing recorder.');
+          recorder.pauseRecording();
+          setRecorder(null);
+      }
+      setFinalTranscript(tmsg);
+      setIsRecording(false);
+      console.log(`Updated isRecording state to: false`);
+  };
+
+  
+  useEffect(() => {
+    console.log('useEffect triggered by socket state change.');
+    if (socket) {
+      console.log('Socket is available.');
+      const texts: { [key: string]: string } = {};
+  
+      socket.onmessage = (message: MessageEvent) => {
+        console.log('Received WebSocket message.');
+        let msg = "";
+        const res = JSON.parse(message.data);
+        texts[res.audio_start] = res.text;
+        const keys = Object.keys(texts);
+        keys.sort((a, b) => Number(a) - Number(b));
+        for (const key of keys) {
+          if (texts[key]) {
+            msg += ` ${texts[key]}`;
+          }
+        }
+        setTmsg(msg);
+        console.log(`Updated tmsg state to: ${msg}`);
+      };
+  
+      socket.onerror = (event: Event) => {
+        console.error('WebSocket error:', event);
+        socket.close();
+      };
+  
+      socket.onclose = (event: CloseEvent) => {
+        console.log('WebSocket closed:', event);
+        setSocket(null);
+        setFinalTranscript(tmsg);
+        setIsRecording(false);
+      };
+  
+      socket.onopen = () => {
+        console.log('WebSocket is open. Preparing to get user media.');
+        
+        navigator.mediaDevices
+          .getUserMedia({ audio: true })
+          .then((stream) => {
+            console.log('User media acquired. Initializing recorder.');
+            
+            const newRecorder = new RecordRTC(stream, {
+              type: "audio",
+              mimeType: "audio/webm;codecs=pcm", // endpoint requires 16bit PCM audio
+              recorderType: StereoAudioRecorder,
+              timeSlice: 250, // set 250 ms intervals of data that sends to AAI
+              desiredSampRate: 16000,
+              numberOfAudioChannels: 1, // real-time requires only one channel
+              bufferSize: 16384,
+              audioBitsPerSecond: 128000,
+              ondataavailable: (blob: Blob) => {
+                console.log('Data available. Reading blob.');
+                
+                const reader = new FileReader();
+                reader.onload = () => {
+                  if (reader.result) {
+                    console.log('Blob read successfully. Sending audio data.');
+                    
+                    const base64data = reader.result as string;
+                    socket?.send(JSON.stringify({ audio_data: base64data.split("base64,")[1] }));
+                  }
+                };
+                
+                reader.readAsDataURL(blob);
+              },
+            });
+      
+            newRecorder.startRecording();
+            setIsRecording(true);
+            setFinalTranscript("");
+            console.log('Recording started.');
+            
+            setRecorder(newRecorder); // Using setRecorder to update the recorder state
+          })
+          .catch((err) => {
+            console.error('Error getting user media:', err);
+          });
+      };
+      
+      //buttonEl.innerText = isRecording ? "Stop" : "Record";
+      //titleEl.innerText = isRecording ? "Click stop to end recording!" : "Click start to begin recording!";
+      
+    }
+  }, [socket]);
 
   const playAudio = useCallback(
     (url: string) => {
@@ -243,7 +390,7 @@ function App() {
 
   useEffect(() => {
     setState((oldState) => {
-      if (listening) {
+      if (isRecording) {
         return State.LISTENING;
       }
       if (
@@ -254,7 +401,7 @@ function App() {
       }
       return State.IDLE;
     });
-  }, [listening, transcript, finalTranscript]);
+  }, [isRecording, tmsg]);
 
   // Scroll to bottom when user is speaking a prompt
   useEffect(() => {
@@ -298,9 +445,7 @@ function App() {
     ]);
 
 
-    const host = Config.IS_LOCAL_SETUP_REQUIRED
-      ? `${settings.host}:${settings.port}`
-      : Config.API_HOST;
+    
     const { response, abortController } = API.sendMessage(host, {
       text: finalTranscript,
       parentMessageId: conversationRef.current.currentMessageId || undefined,
@@ -405,7 +550,7 @@ function App() {
           );
         })}
         {state === State.LISTENING && (
-          <Message type="prompt" text={transcript} isActive />
+          <Message type="prompt" text={tmsg} isActive />
         )}
         <div ref={bottomDivRef} />
       </main>
@@ -470,7 +615,7 @@ function App() {
                 ? 'bg-accent2'
                 : ''
             } text-light flex justify-center items-center rounded-full transition-all hover:opacity-80 focus:opacity-80`}
-            onClick={recognizeSpeech}
+            onClick={run}
             disabled={state === State.PROCESSING}
             aria-label={
               state === State.IDLE
