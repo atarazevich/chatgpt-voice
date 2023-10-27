@@ -97,13 +97,15 @@ function App() {
     conversationRef.current.currentMessageId = parentIdParam;
   }
   
-  const first_message = `Hi, I'm Famy, and I specialize in crafting compelling memoirs. I'd like to offer you a two-step sample of my work.
+  const first_message = `Hi, I'm Famy, and I'm here to help you with a compelling memoir!
+  Today, let's start with one chapter, one story from your past.
   
-  First, we'll conduct a 10-minute interview—longer if you'd like—to discuss one of the pivotal moments that shaped you or perhaps just an intriguing anecdote.
-  Within 48 hours, you'll receive a carefully crafted story in your inbox. If you like what you read, we can discuss creating your full memoir.
+  We are going to chat for 10 minutes—or longer, if you wish.
+  Then, within 48 hours, you'll receive a carefully crafted story to your inbox.
   
-  Simply click the mic button to start the interview, and click it again when you're done.
-  First, please introduce yourself.`;
+  To start, click the microphone button and start speaking. Click that button again to send your message to me.
+  
+  I am eager to learn more about you! What is your name, and what story would you like to capture today?`;
   const history = localStorage.getItem('messages');
   const newChatMessages: Message[] = [{ type: 'response', text: firstMessageParam || first_message },];
   const initialMessages: Message[] = history && JSON.parse(history) || newChatMessages;
