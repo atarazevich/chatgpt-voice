@@ -98,29 +98,12 @@ function App() {
   }
   
   const first_message = `
-  # Welcome to Famy's Early-Access Journey! 🎉
+    Hi, I'm Famy, and I specialize in crafting compelling memoirs. I'd like to offer you a two-step sample of my work. 
+    First, we'll conduct a 10-minute interview—longer if you'd like—to discuss one of the pivotal moments that shaped you or perhaps just an intriguing anecdote. 
+    Within 48 hours, you'll receive a carefully crafted story in your inbox. If you like what you read, we can discuss creating your full memoir. 
 
-  We're thrilled to help you capture your family's stories, wisdom, and cherished memories—straight from your voice to written words. 📜✨
-  
-  ## How It Works
-  
-  1. **Press the Mic Button**: click the black microphone button when you are ready to share. To send the message to the bot, click same button again - it will be teal color then.
-  2. **Talk It Out**: Unveil a memory, share a thought, or give us a snapshot of your life. Just be authentically you!
-  3. **Magic Happens**: Your spoken tales get transformed into text. Don't stress about transcription errors, spelling or grammar; that's on us.
-  4. **We come back to you with a written story.** This version of Famy application focuses solely on the recording aspect.
-  
-  ## Before We Jump In
-  
-  - **Time**: Buckle up for a quick 10-minute session (you can still extend it if you feel you're onto some storytelling gold!).
-  - **Focus**: Our aim is to zero in on ONE defining tale that captures a facet of your unique identity.
-  - **Storycraft**: Brace yourself for a few probing questions designed to enrich your narrative and reveal its heart.
-  - **Quality**: Even though I'm still a newbie, we're aiming for nothing less than soul-stirring, unforgettable stories.
-  
-  ## 🎙️ Ready to Begin?
-  
-  Go ahead, tap that microphone button and let's dive in into fabolous stories you didn't even know you had!
-
-  `;
+    Simply click the mic button to start the interview, and click it again when you're done. 
+    First, please introduce yourself.`;
   const history = localStorage.getItem('messages');
   const initialMessages: Message[] = history && JSON.parse(history) ||
   [
