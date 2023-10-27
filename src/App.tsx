@@ -105,10 +105,8 @@ function App() {
   Simply click the mic button to start the interview, and click it again when you're done.
   First, please introduce yourself.`;
   const history = localStorage.getItem('messages');
-  const initialMessages: Message[] = history && JSON.parse(history) ||
-  [
-    { type: 'response', text: firstMessageParam || first_message },
-  ];
+  const newChatMessages: Message[] = [{ type: 'response', text: firstMessageParam || first_message },];
+  const initialMessages: Message[] = history && JSON.parse(history) || newChatMessages;
   const defaultSettingsRef = useRef({
     host: 'http://localhost',
     port: 8000,
@@ -351,12 +349,11 @@ function App() {
   );
 
   const resetConversation = () => {
-    setState(State.IDLE);
     localStorage.setItem('messages', '')
-    setMessages(initialMessages);
+    setMessages(newChatMessages);
     conversationRef.current = { currentMessageId: '' };
-    Voice.idle();
     abortRef.current?.abort();
+    setState(State.IDLE);
   };
 
   const handleModalOpenChange = (isOpen: boolean) => {
@@ -627,6 +624,13 @@ function App() {
               </div>
             ) : null}
           </button>
+          <Button aria-label="New conversation" onClick={() => {
+            if (window.confirm('Are you sure you want to start a new conversation?')) {
+              resetConversation();
+            }
+          }}>
+            <FilePlus strokeWidth={1} />
+          </Button>
 
 
 
