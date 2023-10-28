@@ -98,7 +98,7 @@ function App() {
   }
   
   const first_message = `Hi, I'm Famy, and I'm here to help you with a compelling memoir!
-  Today, let's start with one chapter, one story from your past.
+  Let's start with one chapter, one story from your past.
   
   We are going to chat for 10 minutes—or longer, if you wish.
   Then, within 48 hours, you'll receive a carefully crafted story to your inbox.
