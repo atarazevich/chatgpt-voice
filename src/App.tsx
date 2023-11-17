@@ -84,7 +84,7 @@ function App() {
   ]);
 
   function fetchQuestions(sessionId: string) {
-    axios.get(`http://${host}/get_questions`, { 
+    axios.get(`${host}/get_questions`, { 
       params: { session_id: sessionId }
     })
     .then(response => {
@@ -197,7 +197,7 @@ function App() {
           formData.append('file', audioBlob, `User:${userIdParam}|Session:${sessionIdParam}|recording.wav`);
   
           // Post the FormData to your backend endpoint
-          axios.post(`http://${host}/upload_audio`, formData, {
+          axios.post(`${host}/upload_audio`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
