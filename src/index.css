@@ -74,11 +74,11 @@
   }
   
   .wave-container {
-    @apply transition-opacity opacity-30 text-gray-400; /* Opacity and color transition */
+    @apply transition-opacity opacity-30; /* Opacity and color transition */
   }
   
   .wave-container.recording {
-    @apply opacity-100 text-pink-500; /* Brighter color when recording */
+    @apply opacity-100; /* Brighter color when recording */
   }
 
   .note-container {

@@ -29,23 +29,14 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ isRecording, volume }
   useEffect(() => {
     let animationFrameId: number;
   
-    const nonLinearTransform = (volume: number) => {
-        // Constants to adjust the curve (these may need tweaking)
-        const baseSensitivity = 2; // Base multiplier for sensitivity
-        const volumeScaling = 10;  // Scaling factor for the volume
-      
-        // Apply a square root transformation
-        return baseSensitivity * Math.sqrt(volume) * volumeScaling;
-      };
-      
     const updateWaveforms = () => {
-    setWaveforms(prevWaveforms => {
-        return prevWaveforms.map((wf) => {
-        const transformedVolume = nonLinearTransform(volume);
-        const targetValue = isRecording ? transformedVolume : 0;
-        return lerp(wf, targetValue, 0.1);
+        setWaveforms(prevWaveforms => {
+          return prevWaveforms.map((wf) => {
+            const sensitivityMultiplier = 3; // Increase this value to increase sensitivity
+            const targetValue = isRecording ? volume * Math.random() * 50 * sensitivityMultiplier : 0;
+            return lerp(wf, targetValue, 0.05); // You can adjust the lerp factor as well for faster transitions
+          });
         });
-    });
     };
       
   

@@ -1,22 +1,18 @@
-import Wave from 'react-wavify';
-import AWS from 'aws-sdk';
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
 import {
-  Save,
   Loader,
   Circle,
   Pause,
   ChevronLeft, ChevronRight
 } from 'react-feather';
 import axios from 'axios';
-import Button from './design_system/Button';
 import Message from './design_system/Message';
+import AudioVisualizer from './components/AudioVisualizer';
 import { H } from 'highlight.run';
 
 if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
@@ -313,29 +309,16 @@ function App() {
       <div className={`timer ${isRecording ? 'recording' : ''}`}>
         <span>Time recorded: {new Date(recordingTime * 1000).toISOString().substr(14, 5)}</span>
       </div>
-      <div className={`wave-container ${isRecording ? 'recording' : ''}`}>
-        <Wave
-          fill='url(#gradient)'
-          paused={!isRecording}
-          options={{
-            height: 10,
-            amplitude: isRecording ? volume * 300: 1,  // Adjust multiplier for better effect
-            speed: 0.20,  // Speed of the wave
-            points: 10    // Number of points in the wave
-          }}
-          > <defs>
-            <linearGradient id="gradient" gradientTransform="rotate(90)">
-              <stop offset="5%" stopColor="pink" />
-              <stop offset="95%" stopColor="gold" />
-            </linearGradient>
-          </defs></Wave>
-        </div>
-
-        <div ref={bottomDivRef} />
       
-      <div>
-        <div className="flex justify-center items-center gap-x-8  lg:-translate-y-1/2">
 
+      <div className={`flex justify-center items-center`}>
+        <AudioVisualizer isRecording={isRecording} volume={volume} />
+      </div>
+            
+      <div>
+        
+        <div className="flex justify-center items-center gap-x-8  lg:-translate-y-1/2">
+      
         <button
           type="button"
           className={`w-40 h-16 ${
