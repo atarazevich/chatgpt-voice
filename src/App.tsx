@@ -37,6 +37,12 @@ if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
   });
 }
 
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
+
 interface Message {
   type: 'prompt' | 'response';
   text: string;
