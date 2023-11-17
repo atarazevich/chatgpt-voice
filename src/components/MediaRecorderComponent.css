@@ -1,0 +1,53 @@
+/* Importing the main styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+.media-recorder {
+    font-family: var(--font-sans);
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 300px;
+    margin: auto;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.media-recorder button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.media-recorder button:hover {
+    background-color: #43a047;
+}
+
+.media-recorder button:disabled {
+    background-color: #9e9e9e;
+    cursor: not-allowed;
+}
+
+.media-recorder-info {
+    margin-top: 15px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.media-recorder-timer {
+    font-size: 1.2rem;
+    color: #333;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.media-recorder-label {
+    margin-top: 20px;
+    color: #666;
+    font-style: italic;
+}

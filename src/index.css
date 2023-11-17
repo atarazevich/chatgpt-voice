@@ -42,4 +42,59 @@
   .markdown-content {
     @apply text-xs leading-5;
   }
+  .carousel-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px; /* Adjust the gap between cards */
+    padding: 10px;
+  }
+  
+  .message-card {
+    width: 100%;
+    max-width: 600px; /* Adjust as needed */
+    margin: 0 auto;
+    background-color: #fff; /* Almost white background */
+    border-radius: 8px; /* Rounded borders */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    padding: 20px; /* Inner spacing */
+    /* Add more styling as needed */
+  }
+  .timer {
+    text-align: center; /* Center the timer text */
+    font-size: 1.2em;
+    color: #000; /* Default color */
+    transition: color 0.3s ease;
+    margin-top: 10px; /* Add some spacing above the timer */
+  }
+  
+  .timer span {
+    background-color: #f3f3f3; /* Light background for the timer text */
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  }
+  
+  .timer.recording span {
+    color: red;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+  
+  .wave-container {
+    transition: opacity 0.3s ease-in-out, color 0.3s ease-in-out;
+    opacity: 0.3; /* Grayed-out state when not recording */
+    color: #bfbfbf; /* Gray color */
+  }
+  
+  .wave-container.recording {
+    opacity: 1; /* Fully visible when recording */
+    color: #f6f; /* Adjusted to pink for recording */
+  }
+  
+  
 }

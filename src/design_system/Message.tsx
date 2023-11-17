@@ -1,5 +1,5 @@
 import { KeyboardEventHandler } from 'react';
-import { DollarSign, Terminal } from 'react-feather';
+import { DollarSign, Terminal, HelpCircle} from 'react-feather';
 import ReactMarkdown from 'react-markdown';
 
 interface MessageProps {
@@ -44,7 +44,7 @@ export default function Message({
           </span>
         ) : (
           <span className="text-accent2">
-            <Terminal strokeWidth={3} />
+            <HelpCircle strokeWidth={3} />
           </span>
         )}
       </div>

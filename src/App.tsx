@@ -1,3 +1,5 @@
+import Wave from 'react-wavify';
+import AWS from 'aws-sdk';
 import {
   useCallback,
   useEffect,
@@ -6,16 +8,15 @@ import {
 } from 'react';
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
 import {
-  FilePlus,
-  Mic,
-  Activity,
+  Save,
   Loader,
+  Circle,
+  Pause,
+  ChevronLeft, ChevronRight
 } from 'react-feather';
-
+import axios from 'axios';
 import Button from './design_system/Button';
 import Message from './design_system/Message';
-import API from './lib/api';
-import Storage from './lib/storage';
 import { H } from 'highlight.run';
 
 if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
@@ -35,11 +36,6 @@ if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
          },
   });
 }
-interface CreateChatGPTMessageResponse {
-  answer: string;
-  messageId: string;
-  ttsUrl: string;
-}
 
 interface Message {
   type: 'prompt' | 'response';
@@ -47,79 +43,66 @@ interface Message {
   ttsUrl?: string;
 }
 
-
 enum State {
   IDLE,
   LISTENING,
   PROCESSING,
 }
 
-const savedData = Storage.load();
+type Question = {
+  text: string;
+};
 
 function App() {
 
+  const host = import.meta.env.VITE_API_HOST || "localhost:8000";
 
-  const conversationRef = useRef({ currentMessageId: '' });
   const params = new URLSearchParams(window.location.search);
-  const firstMessageParam = params.get('first_message');
-  const parentIdParam = params.get('message_parent_id');
-
-  if (parentIdParam) {
-    conversationRef.current.currentMessageId = parentIdParam;
-  }
-  
-  const first_message = `Hi, I'm Famy, and I'm here to help you with a compelling memoir!
-  Let's start with one chapter, one story from your past.
-  
-  We are going to chat for 10 minutes—or longer, if you wish.
-  Then, within 48 hours, you'll receive a carefully crafted story to your inbox.
-  
-  To start, click the microphone button and start speaking. Click that button again to send your message to me.
-  
-  I am eager to learn more about you! What is your name, and what story would you like to capture today?`;
-  const history = localStorage.getItem('messages');
-  const newChatMessages: Message[] = [{ type: 'response', text: firstMessageParam || first_message },];
-  const initialMessages: Message[] = history && JSON.parse(history) || newChatMessages;
-
+  const userIdParam : string | null= params.get('user_id');
+  const sessionIdParam: string | null = params.get('session_id');
   
   const [state, setState] = useState(State.IDLE);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  useEffect(() => {
-    localStorage.setItem('messages', JSON.stringify(messages));
-    console.log('MESSAGES UPDATED:', messages);
-  }, [messages]);
-
   const abortRef = useRef<AbortController | null>(null);
   const bottomDivRef = useRef<HTMLDivElement>(null);
 
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recorder, setRecorder] = useState<any>(null); // Consider using a more specific type if available
+  const [questions, setQuestions] = useState< Question[] > ([
+    { text: "How would you introduce yourself, including your name, age, and a brief overview of your life, to someone who has never met you?" },
+    { text: "Where are you currently in your life's journey, and how do you feel about the path you've traveled so far?" },
+    { text: "Can you share a quick preview of what readers might expect to discover in your memoir?" },
+    { text: "How do you hope to connect with your readers through your life's story?" },
+    { text: "What prompted you to write your memoir at this particular point in your life?" },
+    { text: "What are some life lessons you've learned that you find crucial to share in your foreword?" },
+    { text: "What message or feeling do you want to leave your readers with as they begin reading your memoir?" }
+  ]);
 
+  function fetchQuestions(sessionId: string) {
+    axios.get(`http://${host}/get_questions`, { 
+      params: { session_id: sessionId }
+    })
+    .then(response => {
+      console.log('Questions fetched:', response.data);
+      const questions = response.data; // assuming the response is an array of questions
+      setQuestions(questions);
+    })
+    .catch(error => console.error('Error fetching questions:', error));
+  }
 
-  const [token, setToken] = useState(null);
-  const fetchToken = async () => {
-    console.log('Fetching token...');
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_HOST}get_token`);
-      const data = await response.json();
-      if (data.error) {
-        console.error(`Error fetching token: ${data.error}`);
-        alert(data.error);
-        return;
-      }
-      console.log(`Received token: ${data.token}`);
-      setToken(data.token);
-    } catch (error) {
-      console.error('An error occurred:', error);
-    }
-  };
   useEffect(() => {
-    fetchToken();
+    if (sessionIdParam) {
+      fetchQuestions(sessionIdParam);
+    }
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
   }, []);
 
-  const [finalTranscript, setFinalTranscript] = useState<string>("");
-
-  const [isRecording, setIsRecording] = useState<boolean>(false);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [recorder, setRecorder] = useState<any>(null); // Consider using a more specific type if available
   const run = () => {
     console.log('Run function invoked.');
     console.log(`Current isRecording state: ${isRecording}`);
@@ -133,74 +116,47 @@ function App() {
     }
   };
 
-  const startRecording = () => {
-    if (!token) {
-      console.error("No token available.");
-      return;
+
+  
+
+  const [volume, setVolume] = useState(0);  // State to store the volume
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  const analyzeVolume = () => {
+    const analyser = analyserRef.current;
+    if (!analyser) return;
+  
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(dataArray);
+  
+    let sum = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      const value = (dataArray[i] - 128) / 128;  // Normalized to -1 to 1
+      sum += value * value;  // Sum of squares
     }
+    const rms = Math.sqrt(sum / dataArray.length);  // RMS
+    setVolume(Math.min(1, rms * 2));  // Scale and cap the volume to 1
   
-    console.log(`Using token: ${token}`);
-    const newSocket = new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
-    console.log('Creating new WebSocket instance.');
-    setSocket(newSocket);
-    console.log(`Updated isRecording state to: true`);
+    animationFrameRef.current = requestAnimationFrame(analyzeVolume);
   };
-
-  const stopRecording = () => {
-      if (socket) {
-          console.log('Terminating WebSocket session and closing socket.');
-          socket.send(JSON.stringify({ terminate_session: true }));
-          socket.close();
-          setSocket(null);
-      }
-      if (recorder) {
-          console.log('Pausing recorder.');
-          recorder.pauseRecording();
-          setRecorder(null);
-      }
-      setIsRecording(false);
-      console.log(`Updated isRecording state to: false`);
-  };
-
-  useEffect(() => {
-    console.log('useEffect triggered by socket state change.');
-    if (socket) {
-      console.log('Socket is available.');
-      const texts: { [key: string]: string } = {};
   
-      socket.onmessage = (message: MessageEvent) => {
-        let msg = "";
-        const res = JSON.parse(message.data);
-        texts[res.audio_start] = res.text;
-        const keys = Object.keys(texts);
-        keys.sort((a, b) => Number(a) - Number(b));
-        for (const key of keys) {
-          if (texts[key]) {
-            msg += ` ${texts[key]}`;
-          }
-        }
-        setFinalTranscript(msg);
-      };
-  
-      socket.onerror = (event: Event) => {
-        console.error('WebSocket error:', event);
-        socket.close();
-      };
-  
-      socket.onclose = (event: CloseEvent) => {
-        console.log('WebSocket closed:', event);
-        setSocket(null);
-        setIsRecording(false);
-      };
-  
-      socket.onopen = () => {
-        console.log('WebSocket is open. Preparing to get user media.');
-        
-        navigator.mediaDevices
+  const startRecording = () => {
+    
+    navigator.mediaDevices
           .getUserMedia({ audio: true })
           .then((stream) => {
             console.log('User media acquired. Initializing recorder.');
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048;
+            const microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
             
+            // Save references
+            audioContextRef.current = audioContext;
+            analyserRef.current = analyser;
             const newRecorder = new RecordRTC(stream, {
               type: "audio",
               mimeType: "audio/wav",  // Changed to WAV to match the requirements
@@ -210,58 +166,58 @@ function App() {
               numberOfAudioChannels: 1,  // Single channel as required
               bufferSize: 16384,  // Unchanged
               audioBitsPerSecond: 128000,  // Unchanged
-              ondataavailable: (blob: Blob) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                  if (reader.result) {
-                    const base64data = reader.result as string;
-                    socket?.send(JSON.stringify({ audio_data: base64data.split("base64,")[1] }));
-                  }
-                };
-                
-                reader.readAsDataURL(blob);
-              },
             });
-      
+
             newRecorder.startRecording();
             setIsRecording(true);
             console.log('Recording started.');
             
             setRecorder(newRecorder); // Using setRecorder to update the recorder state
+            analyzeVolume();
           })
           .catch((err) => {
             console.error('Error getting user media:', err);
           });
-      };
-      
-      //buttonEl.innerText = isRecording ? "Stop" : "Record";
-      //titleEl.innerText = isRecording ? "Click stop to end recording!" : "Click start to begin recording!";
-      
-    }
-  }, [socket]);
-
-  const playAudio = useCallback(
-    (url: string) => {
-      return new Promise((resolve) => {
-        const audio = new Audio(url);
-        audio.onended = resolve;
-        audio.play();
-      });
-    },
-    [],
-);
-
-
-  const resetConversation = () => {
-    localStorage.setItem('messages', '')
-    setMessages(newChatMessages);
-    conversationRef.current = { currentMessageId: '' };
-    abortRef.current?.abort();
-    setState(State.IDLE);
   };
-
-
   
+  const stopRecording = () => {
+    if (recorder) {
+      recorder.stopRecording(() => {
+        const audioBlob = recorder.getBlob();
+        console.log('Audio blob:', audioBlob);
+        if (audioBlob && audioBlob.size > 0) {
+          // Create FormData to send the audio blob
+          const formData = new FormData();
+          formData.append('file', audioBlob, `User:${userIdParam}|Session:${sessionIdParam}|recording.wav`);
+  
+          // Post the FormData to your backend endpoint
+          axios.post(`http://${host}/upload_audio`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          })
+          .then(response => {
+            setState(State.IDLE);
+            console.log('Audio uploaded successfully:', response);
+          })
+          .catch(error => {
+            setState(State.IDLE);
+            console.error('Error uploading audio:', error);
+          });
+        } else {
+          console.error('Recorded audio is empty.');
+        }
+        // Clean up
+        recorder.reset();
+        console.log('Recorder reset.');
+        setRecorder(null);
+        setIsRecording(false);
+        console.log(`Updated isRecording state to: false`);
+      });
+    }
+  };
+  
+
 
   useEffect(() => {
     setState((oldState) => {
@@ -269,88 +225,57 @@ function App() {
         return State.LISTENING;
       }
       if (
-        (oldState === State.LISTENING && finalTranscript) || // At this point finalTranscript may not have a value yet
+        oldState === State.LISTENING  || // At this point finalTranscript may not have a value yet
         oldState === State.PROCESSING // Avoid setting state to IDLE when transcript is set to '' while processing
       ) {
         return State.PROCESSING;
       }
       return State.IDLE;
     });
-    bottomDivRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [isRecording, finalTranscript]);
+  }, [isRecording]);
 
-  // Scroll to bottom when user is speaking a prompt
-  useEffect(() => {
-    if (state === State.LISTENING) {
-      bottomDivRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [state]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Scroll to bottom when there is a new response
-  useEffect(() => {
-    bottomDivRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
-
-
-  const isSendingMessageRef = useRef(false);
-  useEffect(() => {
-    if (isSendingMessageRef.current || state !== State.PROCESSING || !finalTranscript) {
-      console.log('DROPPED ADDING MESSAGE with', isSendingMessageRef.current, state, finalTranscript);
-      return;
-    }
-    console.log('ADDING MESSAGE with', isSendingMessageRef.current, state, finalTranscript);
-  
-    isSendingMessageRef.current = true;
-    setMessages((oldMessages) => [
-      ...oldMessages,
-      { type: 'prompt', text: finalTranscript },
-    ]);
-
-    
-    const { response, abortController } = API.sendMessage(import.meta.env.VITE_API_HOST, {
-      text: finalTranscript,
-      parentMessageId: conversationRef.current.currentMessageId || undefined,
-    });
-    abortRef.current = abortController;
-
-    response
-      .then((res) => res.json())
-      .then((res: CreateChatGPTMessageResponse) => {
-        conversationRef.current.currentMessageId = res.messageId;
-        setMessages((oldMessages) => [
-          ...oldMessages,
-          { type: 'response', text: res.answer, ttsUrl: res.ttsUrl },
-        ]);
-        playAudio(res.ttsUrl);
-      })
-      .catch((err: unknown) => {
-        console.warn(err);
-        let response: string;
-
-        // Ignore aborted request
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-      
-        setMessages((oldMessages) => [
-          ...oldMessages,
-          { type: 'response', text: response },
-        ]);
-      })
-      .finally(() => {
-        isSendingMessageRef.current = false;
-        setState(State.IDLE);
-      });
-  }, [state]);
-
-  const handleOnClick = (message: Message) => {
-    return (text: string) => {
-        if (message.ttsUrl) {
-            playAudio(message.ttsUrl)
-        }
-    };
+  const goToNextMessage = () => {
+    setCurrentIndex(prevIndex => (prevIndex + 1) % questions.length); // Loops back to 0 after the last question
   };
+  
+  const goToPreviousMessage = () => {
+    setCurrentIndex(prevIndex => (prevIndex - 1 + questions.length) % questions.length); // Loops to the last question if index is 0
+  };
+  
+  useEffect(() => {
+    const handleKeyDown = (e:any) => {
+      if (e.key === 'ArrowRight') {
+        goToNextMessage();
+      } else if (e.key === 'ArrowLeft') {
+        goToPreviousMessage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [goToNextMessage, goToPreviousMessage]);
+  
+  const [recordingTime, setRecordingTime] = useState(0);
+
+  useEffect(() => {
+    let intervalId: number;
+  
+    if (isRecording) {
+      intervalId = setInterval(() => {
+        setRecordingTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+  
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [isRecording]);
+  
 
   return (
     <div className="container mx-auto px-8 py-9 flex flex-col h-screen gap-y-4 lg:px-28 lg:py-12 lg:relative">
@@ -363,44 +288,45 @@ function App() {
       </header>
 
       <main className="flex-1 flex flex-col gap-y-4 overflow-y-auto lg:mr-80 lg:gap-y-8">
-        {messages.map(({ type, text, ttsUrl }, index) => {
-          const getIsActive = () => {
-            switch (state) {
-              case State.IDLE: {
-                if (type === 'prompt') {
-                  return index === messages.length - 2;
-                } else if (type === 'response') {
-                  return index === messages.length - 1;
-                }
-                return false;
-              }
+        <div className="carousel-container">
+          <button onClick={goToPreviousMessage} aria-label="Previous Message" className="navigation-button"><ChevronLeft /></button>
 
-              case State.LISTENING:
-                return false;
-
-              case State.PROCESSING:
-                return type === 'prompt' && index === messages.length - 1;
-
-              default:
-                return false;
-            }
-          };
-          return (
+          <div className="message-card">
             <Message
-              key={text}
-              type={type}
-              text={text}
-              isActive={getIsActive()}
-              onClick={handleOnClick({ type, text, ttsUrl })}
+              type='response' // Assuming all carousel messages are of type 'prompt'
+              text={`Question ${currentIndex + 1}:\n\n ${questions[currentIndex].text}`}
+              isActive={true} // In the carousel, the current message is always active
+              onClick={goToNextMessage} // Define this function as needed
             />
-          );
-        })}
-        {state === State.LISTENING && (
-          <Message type="prompt" text={finalTranscript} isActive />
-        )}
-        <div ref={bottomDivRef} />
-      </main>
+          </div>
 
+          <button onClick={goToNextMessage} aria-label="Next Message" className="navigation-button"><ChevronRight /></button>
+        </div>
+
+      
+      <div className={`timer ${isRecording ? 'recording' : ''}`}>
+        <span>Time recorded: {new Date(recordingTime * 1000).toISOString().substr(14, 5)}</span>
+      </div>
+      <div className={`wave-container ${isRecording ? 'recording' : ''}`}>
+        <Wave
+          fill='url(#gradient)'
+          paused={!isRecording}
+          options={{
+            height: 10,
+            amplitude: isRecording ? volume * 300: 1,  // Adjust multiplier for better effect
+            speed: 0.20,  // Speed of the wave
+            points: 10    // Number of points in the wave
+          }}
+          > <defs>
+            <linearGradient id="gradient" gradientTransform="rotate(90)">
+              <stop offset="5%" stopColor="pink" />
+              <stop offset="95%" stopColor="gold" />
+            </linearGradient>
+          </defs></Wave>
+        </div>
+
+        <div ref={bottomDivRef} />
+      
       <div>
         <div className="flex justify-center items-center gap-x-8 lg:flex-col lg:gap-y-8 lg:absolute lg:top-1/2 lg:right-28 lg:-translate-y-1/2">
 
@@ -408,7 +334,7 @@ function App() {
             type="button"
             className={`w-16 h-16 ${
               state === State.IDLE
-                ? 'bg-dark'
+                ? 'bg-stone-400'
                 : state === State.LISTENING
                 ? 'bg-accent1'
                 : state === State.PROCESSING
@@ -428,10 +354,10 @@ function App() {
             }
           >
             {state === State.IDLE ? (
-              <Mic strokeWidth={1} size={32} />
+              <Circle strokeWidth={3} size={32} color='RGB(220, 20, 60)'/>
             ) : state === State.LISTENING ? (
-              <div className="animate-blink">
-                <Activity strokeWidth={1} size={32} />
+              <div>
+                <Pause strokeWidth={2} size={32} />
               </div>
             ) : state === State.PROCESSING ? (
               <div className="animate-spin-2">
@@ -441,17 +367,16 @@ function App() {
           </button>
           <Button aria-label="New conversation" onClick={() => {
             if (window.confirm('Are you sure you want to start a new conversation?')) {
-              resetConversation();
             }
           }}>
-            <FilePlus strokeWidth={1} />
+            <Save strokeWidth={1} />
           </Button>
 
 
 
+          </div>
         </div>
-      </div>
-
+      </main>
     </div>
   );
 }
