@@ -1,0 +1,9 @@
+.audio-visualizer {
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+  }
+  
+  .audio-visualizer.recording {
+    background-color: #fff0f0;
+  }
+  

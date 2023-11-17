@@ -188,6 +188,7 @@ function App() {
   
   const stopRecording = () => {
     if (recorder) {
+      setIsRecording(false);
       recorder.stopRecording(() => {
         const audioBlob = recorder.getBlob();
         console.log('Audio blob:', audioBlob);
@@ -217,7 +218,6 @@ function App() {
         recorder.reset();
         console.log('Recorder reset.');
         setRecorder(null);
-        setIsRecording(false);
         console.log(`Updated isRecording state to: false`);
       });
     }
@@ -300,7 +300,7 @@ function App() {
           <div className="message-card">
             <Message
               type='response' // Assuming all carousel messages are of type 'prompt'
-              text={`Question ${currentIndex + 1}:\n\n ${questions[currentIndex].text}`}
+              text={`Question ${currentIndex + 1}/${questions.length}:\n\n ${questions[currentIndex].text}`}
               isActive={true} // In the carousel, the current message is always active
               onClick={goToNextMessage} // Define this function as needed
             />
@@ -334,53 +334,46 @@ function App() {
         <div ref={bottomDivRef} />
       
       <div>
-        <div className="flex justify-center items-center gap-x-8 lg:flex-col lg:gap-y-8 lg:absolute lg:top-1/2 lg:right-28 lg:-translate-y-1/2">
+        <div className="flex justify-center items-center gap-x-8  lg:-translate-y-1/2">
 
-          <button
-            type="button"
-            className={`w-16 h-16 ${
-              state === State.IDLE
-                ? 'bg-stone-400'
-                : state === State.LISTENING
-                ? 'bg-accent1'
-                : state === State.PROCESSING
-                ? 'bg-accent2'
-                : ''
-            } text-light flex justify-center items-center rounded-full transition-all hover:opacity-80 focus:opacity-80`}
-            onClick={run}
-            disabled={state === State.PROCESSING}
-            aria-label={
-              state === State.IDLE
-                ? 'Start speaking'
-                : state === State.LISTENING
-                ? 'Listening'
-                : state === State.PROCESSING
-                ? 'Processing'
-                : ''
-            }
-          >
+        <button
+          type="button"
+          className={`w-40 h-16 ${
+            state === State.IDLE ? 'bg-stone-400' :
+            state === State.LISTENING ? 'bg-accent1' :
+            state === State.PROCESSING ? 'bg-accent2' : ''
+          } text-light flex justify-center items-center rounded-md transition-all hover:opacity-80 focus:opacity-80`}
+          onClick={run}
+          disabled={state === State.PROCESSING}
+          aria-label={
+            state === State.IDLE ? 'Start Recording' :
+            state === State.LISTENING ? 'Pause Recording' :
+            state === State.PROCESSING ? 'Processing' : ''
+          }
+        >
+          <div className="flex justify-center items-center">
             {state === State.IDLE ? (
-              <Circle strokeWidth={3} size={32} color='RGB(220, 20, 60)'/>
+              <Circle strokeWidth={3} size={32} color='RGB(220, 20, 60)' />
             ) : state === State.LISTENING ? (
-              <div>
-                <Pause strokeWidth={2} size={32} />
-              </div>
+              <Pause strokeWidth={2} size={32} />
             ) : state === State.PROCESSING ? (
               <div className="animate-spin-2">
                 <Loader strokeWidth={1} size={32} />
               </div>
             ) : null}
-          </button>
-          <Button aria-label="New conversation" onClick={() => {
-            if (window.confirm('Are you sure you want to start a new conversation?')) {
-            }
-          }}>
-            <Save strokeWidth={1} />
-          </Button>
-
-
-
           </div>
+          <span className="ml-2">
+            {state === State.IDLE ? 'Start Recording' :
+            state === State.LISTENING ? 'Pause Recording' :
+            state === State.PROCESSING ? 'Processing...' : ''}
+          </span>
+        </button>
+          </div>
+          <div className="note-container">
+              <p>Click “Record” and start telling your stories.</p>
+              <p>Let the questions guide you, or take the lead and share memories your way. Pause the recording any time and resume when you are ready.</p>
+          </div>
+
         </div>
       </main>
     </div>
