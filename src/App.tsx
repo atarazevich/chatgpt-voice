@@ -15,8 +15,9 @@ import Message from './design_system/Message';
 import AudioVisualizer from './components/AudioVisualizer';
 import { H } from 'highlight.run';
 
-if (import.meta.env.ENV && import.meta.env.ENV !== "dev") {
-  console.log("Environment:", import.meta.env.ENV);
+console.log("Environment:", import.meta.env.VITE_ENV);
+if (import.meta.env.VITE_ENV && import.meta.env.VITE_ENV !== "dev") {
+
   H.init('xdnrw74e', {
          serviceName: "frontend-app",
          tracingOrigins: ['https://backend-p-memoir.onrender.com'],
