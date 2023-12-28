@@ -15,7 +15,6 @@ import Message from './design_system/Message';
 import AudioVisualizer from './components/AudioVisualizer';
 import { H } from 'highlight.run';
 
-console.log("Environment:", import.meta.env.VITE_ENV);
 if (import.meta.env.VITE_ENV && import.meta.env.VITE_ENV !== "dev") {
 
   H.init('xdnrw74e', {
@@ -285,8 +284,7 @@ function App() {
       <header className="flex flex-col items-center lg:flex-row lg:justify-between lg:mb-4">
         {/* w-64 so text will break after ChatGPT */}
         <h1 className= "text-4xl text-center w-64 lg:w-auto">
-          Famy
-          <div className="inline-block w-4 h-7 ml-2 align-middle bg-dark/40 animate-blink" />
+          Дом и детство
         </h1>
       </header>
 
@@ -332,7 +330,7 @@ function App() {
           aria-label={
             state === State.IDLE ? 'Start Recording' :
             state === State.LISTENING ? 'Pause Recording' :
-            state === State.PROCESSING ? 'Processing' : ''
+            state === State.PROCESSING ? 'Saving' : ''
           }
         >
           <div className="flex justify-center items-center">
@@ -349,15 +347,10 @@ function App() {
           <span className="ml-2">
             {state === State.IDLE ? 'Start Recording' :
             state === State.LISTENING ? 'Pause Recording' :
-            state === State.PROCESSING ? 'Processing...' : ''}
+            state === State.PROCESSING ? 'Saving...' : ''}
           </span>
         </button>
           </div>
-          <div className="note-container">
-              <p>Click “Record” and start telling your stories.</p>
-              <p>Let the questions guide you, or take the lead and share memories your way. Pause the recording any time and resume when you are ready.</p>
-          </div>
-
         </div>
       </main>
     </div>
